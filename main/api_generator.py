@@ -35,9 +35,7 @@ def register_database(config: dict):
         if alias not in settings.DATABASES:
             settings.DATABASES[alias] = db_settings
             print(f"📦 Database '{alias}' registered successfully.")
-        else:
-            raise ValueError(f"⚠️ Database '{alias}' already exists in settings.")
-    return True    
+        return True    
 
 
 ACTION_TO_VIEW = {

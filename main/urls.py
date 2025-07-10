@@ -16,4 +16,5 @@ urlpatterns = [
     path('model', views.ModelView.as_view(), name='model'),
     path('project/', views.ProjectView.as_view(), name="project"),
     path('project', views.ProjectView.as_view(), name="project"),
+    path('protected/', views.ProtectedView.as_view(), name="protected")
 ]

@@ -14,14 +14,13 @@ from ._parser import ModelSchema, Field
 from .tasks import migrate_model
 from .db_parser import DBConfig
 from django.db import transaction
-
+from .middlewares.DynamicAuthenticationBackend import APIAuthenticationTemplate
 
 def delete_all():
     for u in User.objects.all():
         u.delete()
 # delete_all()
 
-# print(UserProject.objects.get())
 
 
 logger = logging.getLogger(__name__)
@@ -202,7 +201,7 @@ class ModelView(APIView):
 
 
     def post(self, request):
-        try:
+        # try:
             with transaction.atomic():
                 user = request.user
                 data = request.data
@@ -225,7 +224,7 @@ class ModelView(APIView):
                     auth=auth,
                     actions=actions,
                     fields=fields,
-                    project_id=project.id
+                    project_id=str(project.project_id)
                 )
 
                 if not model_schema.is_valid():
@@ -247,8 +246,8 @@ class ModelView(APIView):
         
             # return Response(request.data)
             
-        except Exception as e:
-            return Response({"success":False, "message":"View " +str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # except Exception as e:
+        #     return Response({"success":False, "message":"View " +str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request, model_name:str = None):
         try:
@@ -263,7 +262,13 @@ class ModelView(APIView):
             raise ValueError(f"Model with name <{model_name}> does not exist")
         except Exception as e:
             return Response({"success":False, "message":str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+
+class ProtectedView(APIView):
+    authentication_classes = [APIAuthenticationTemplate]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"message":"It works Bro!!"}, status=status.HTTP_200_OK)
        
 
 

@@ -3,6 +3,10 @@ from main.models import UserProject
 from uuid import UUID
 from django.conf import settings
 from main.middlewares.current_request import get_current_request, get_current_project
+from django.apps import apps
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ClientRouter:
     def db_for_read(self, model, **hints):
@@ -21,6 +25,10 @@ class ClientRouter:
                 settings.DATABASES.update(user_project.database)
                 return db_alias
             except UserProject.DoesNotExist:
+                print("User does not exist")
+                return 'default'
+            except Exception as e:
+                print(f"Routing Error: {e}")
                 return 'default'
 
    
@@ -41,27 +49,21 @@ class ClientRouter:
     def db_for_write(self, model, **hints):
         return self.db_for_read(model, **hints)
 
-# Still baffles me why this verson of allow_mirate dont
-# work as intended.
-    # def allow_migrate(self, db, app_label, model_name=None, **hints):
-    #     if app_label != 'api':
-    #         return None
 
-    #     db_alias = hints.get("db_alias")
-    #     if db_alias:
-    #         return db == db_alias
-    #     return db == 'default'
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
-        # since the previous version is not working as intended,
-        # we have enforce that very migration provided a target database
-                # else, nothing happens
-
-
-        if app_label != 'api':
+        if app_label != "api":
             return None
-        if not settings.DEBUG and not hints.get("db_alias"):
-            return False  # Never allow migrations without alias in production
-        return db == hints.get("db_alias", db)
 
+        if model_name is None:
+            print("model is None so...no migration")
+            return False
+        
+        model = apps.get_model(app_label="api", model_name=model_name)
+        if hasattr(model, 'project_pk'):
+            project = UserProject.objects.get(pk = model.project_pk)
+            print("model has pk but db in database is ", db in project.database)
 
+            return db in project.database
+        print("Model has no pk so No migration")
+        return False

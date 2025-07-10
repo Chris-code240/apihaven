@@ -1,5 +1,6 @@
 import threading
-
+from ..models import UserProject
+from django.apps import apps
 _local = threading.local()
 
 def get_current_request():
@@ -10,7 +11,17 @@ def set_current_project(project_id):
 
 def get_current_project():
     return getattr(_local, 'project_id', None)
-
+def get_auth_schema():
+    try:
+        project = UserProject.objects.get(project_id = get_current_project())
+        auth_schema = next(
+                (schema for schema in project.schemas if schema.get('migration_status') == "SUCCESS" and schema.get('use_for_auth') is True),
+                None
+            )
+        return auth_schema
+    except Exception as e:
+        return None
+    
 class ThreadLocalMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
